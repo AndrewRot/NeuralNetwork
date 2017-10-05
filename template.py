@@ -16,17 +16,17 @@ import math
 import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report, confusion_matrix
 
+#Variables for the model
 batch_size = 512
+num_classes = 10
 
 # fix random seed for reproducibility
 seed = 7
 np.random.seed(seed)
 
 
-
 #test some shit
 data = np.load('images.npy')
-#print(data)
 
 plt.subplot(221)
 plt.imshow(data[0], cmap=plt.get_cmap('gray'))
@@ -52,13 +52,6 @@ data = data / 255
 print('Reshaped X_train shape:', data.shape)
 
 #portion off the training data *** this method works. but not an even distrubtion of data passed through the model
-#s = (3895,784)
-#X_train_set = np.zeros(s)
-#s2 = (971, 784)
-#X_valid_set = np.zeros(s2)
-#s3 = (1634, 784)
-#X_test_set = np.zeros(s3)
-
 X_train_set = np.array([]).reshape(0, 784)
 X_valid_set = np.array([]).reshape(0, 784)
 X_test_set = np.array([]).reshape(0, 784)
@@ -85,16 +78,6 @@ print (Y_valid_set.shape)
 print (Y_test_set.shape)
 
 
-
-#num_pixels = X_train_set.shape[0] * X_train_set.shape[0]
-# flatten 28*28 images to a 784 vector for each image
-#X_train_set = X_train_set.reshape(X_train_set.shape[0], num_pixels).astype('float32')
-#X_valid_set = X_valid_set.reshape(X_valid_set.shape[0], num_pixels).astype('float32')
-#X_test_set = X_test_set.reshape(X_test_set.shape[0], num_pixels).astype('float32')
-
-#X_train_set = X_train_set / 255
-#X_valid_set = X_valid_set / 255
-#X_test_set = X_test_set / 255
 
 #****************************************************************************************************************
 #FIX THE SHIT IN HERE
@@ -155,33 +138,20 @@ training_set_count = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0}
 validation_set_count = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0}
 test_set_count = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0}
 counter = 0 #use to keep track of the index of the respective element in the data array
-#print (data[counter].shape)
-for i in labels:
-	#print (i, "labels[counter].shape ", labels[counter].shape, " Y_train_set.size: ", Y_train_set.shape)
 
+print("Partitioning the data.. This could take a minute")
+for i in labels:
 	#i = 0, 1, 2,6, 3 etc
-	if (training_set_count[i] < training_set_sizes[i]): #insert in each bin until full
-		#print("data[counter]", data[counter])
-		#X_train_set.append(data[counter])
+	if (training_set_count[i] < training_set_sizes[i]): #insert in each bin until full	
 		X_train_set = np.append(X_train_set, [data[counter]],  axis=0)
-		#X_train_set[training_set_count[i]] = data[counter]
-		#Y_train_set[training_set_count[i]] = labels[counter]
 		Y_train_set = np.append(Y_train_set, i)
-		
 		training_set_count[i] += 1
 	elif (validation_set_count[i] < validation_set_sizes[i]):
-		#print("data[counter]", data[counter])
-		#X_valid_set.append(data[counter])
 		X_valid_set = np.append(X_valid_set, [data[counter]],  axis=0)
-		#X_valid_set[validation_set_count[i]] = data[counter]
-		#Y_valid_set[validation_set_count[i]] = labels[counter]
 		Y_valid_set = np.append(Y_valid_set, i)
 		validation_set_count[i] += 1
 	else:
-		#print("data[counter]", data[counter])
 		X_test_set = np.append(X_test_set, [data[counter]],  axis=0)
-		#X_test_set[test_set_count[i]] = data[counter]
-		#Y_test_set[test_set_count[i]] = labels[counter]
 		Y_test_set = np.append(Y_test_set, i)
 		test_set_count[i] += 1
 	counter += 1
@@ -206,41 +176,28 @@ print("X_test_set: ", len(X_test_set), " in shape ", X_test_set.shape, " Y_test_
 
 #****************************************************************************************************************
 
-#unshapedtraingdata = X_train_set.reshape(X_train_set.shape[0], 28, 28).astype('float32')
-#print(unshapedtraingdata[0])
-#print(Y_train_set[0])
-
 #indices = [(0, 3899), (3900, 4874), (4875, 6500)]
 
-print("Before one hot encoding")
-print("X_train_set shape ", X_train_set.shape, " , Y_train_set: ", Y_train_set.shape)
-print("X_valid_set shape ", X_valid_set.shape, " , Y_valid_set: ", Y_valid_set.shape)
-print("X_test_set shape ", X_test_set.shape, " , Y_test_set: ", Y_test_set.shape)
 
 # one hot encode outputs
-
 Y_train_set = np_utils.to_categorical(Y_train_set)
 Y_valid_set = np_utils.to_categorical(Y_valid_set)
 Y_test_set = np_utils.to_categorical(Y_test_set)
 
 
-print("After one hot encoding")
-print("X_train_set shape ", X_train_set.shape, " , Y_train_set: ", Y_train_set.shape)
-print("X_valid_set shape ", X_valid_set.shape, " , Y_valid_set: ", Y_valid_set.shape)
-print("X_test_set shape ", X_test_set.shape, " , Y_test_set: ", Y_test_set.shape)
 
-#Y_test_set = np_utils.to_categorical(Y_test_set)
 
-num_classes = 10
 
 
 # define baseline model
 def baseline_model():
 	# create model
 	model = Sequential()
-	model.add(Dense(num_pixels, input_dim=num_pixels, kernel_initializer='he_normal', activation='relu'))
+	#input layer
+	model.add(Dense(num_pixels, input_dim=num_pixels, kernel_initializer='random_uniform', activation='relu'))
 
-	
+	#additional layers
+	model.add(Dense(num_pixels, kernel_initializer='he_normal'))
 
 	#softmax activation function is used on the output layer to turn the outputs into probability-like values and allow one class of the 10 to be selected as the model’s output prediction. 
 	model.add(Dense(num_classes, kernel_initializer='he_normal', activation='softmax'))
