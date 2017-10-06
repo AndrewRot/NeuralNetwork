@@ -28,13 +28,7 @@ np.random.seed(seed)
 #test some shit
 data = np.load('images.npy')
 
-plt.subplot(221)
-plt.imshow(data[0], cmap=plt.get_cmap('gray'))
-plt.subplot(222)
-plt.imshow(data[1], cmap=plt.get_cmap('gray'))
-plt.subplot(223)
-plt.imshow(data[2], cmap=plt.get_cmap('gray'))
-plt.show()
+
 
 #list of 2d arrays
 # 60% Training set
@@ -50,6 +44,8 @@ data = data / 255
 
 #print(data)
 print('Reshaped X_train shape:', data.shape)
+
+
 
 #portion off the training data *** this method works. but not an even distrubtion of data passed through the model
 X_train_set = np.array([]).reshape(0, 784)
@@ -180,9 +176,16 @@ print("X_test_set: ", len(X_test_set), " in shape ", X_test_set.shape, " Y_test_
 
 
 # one hot encode outputs
+
+#store an extra copy of the OG labels to check at the end for poor predictions
+Y_test_labels = Y_test_set
+
+
 Y_train_set = np_utils.to_categorical(Y_train_set)
 Y_valid_set = np_utils.to_categorical(Y_valid_set)
 Y_test_set = np_utils.to_categorical(Y_test_set)
+
+
 
 
 
@@ -223,56 +226,49 @@ print("Baseline Error: %.2f%%" % (100-scores[1]*100))
 
 print (history.history)
 #need to predict
-results = model.predict(X_train_set, verbose = 3)
-print(results)
-results2 = model.predict(X_valid_set, verbose = 4)
-print(results2)
-results3 = model.predict(X_test_set, verbose = 5)
-print(results3)
+#results = model.predict(X_train_set, verbose = 3)
+#print(results)
+#results2 = model.predict(X_valid_set, verbose = 4)
+#print(results2)
+#results3 = model.predict(X_test_set, verbose = 5)
+#print(results3)
 
 y_pred = model.predict_classes(X_test_set)
+
 p = model.predict_proba(X_test_set)
 target_names = ['0','1','2','3','4','5','6','7','8','9']
 print(classification_report(np.argmax(Y_test_set, axis=1), y_pred, target_names = target_names))
 print(confusion_matrix(np.argmax(Y_test_set, axis = 1), y_pred))
 
+missed_predictions = []
+cnt = 0;
+for i in y_pred:
+	print("cnt", cnt, "prediction", i, "actual", Y_test_labels[cnt])
+	if(i != Y_test_labels[cnt]):
+		print("Missed prediction at index", cnt, "of X_test_set")
+		missed_predictions.append(cnt)
+	cnt += 1;
+	
 
-# Model Template
+#reshape the data to 28 x 28
 
-#model = Sequential() # declare model
-#model.add(Dense(10, input_shape=(28*28, ), kernel_initializer='he_normal')) # first layer
-#model.add(Activation('relu'))
-#
-#
-#
-# Fill in Model Here
-#
-#
-#model.add(Dense(10, kernel_initializer='he_normal')) # last layer
-#model.add(Activation('softmax'))
-
-
-# Compile Model
-#model.compile(optimizer='sgd',
-#              loss='categorical_crossentropy', 
-#              metrics=['accuracy'])
+X_test_set = X_test_set.reshape(X_test_set.shape[0], 28, 28).astype('float32')
+for i in range(3):
+	plt.subplot(221+i)
+	plt.imshow(X_test_set[missed_predictions[i]], cmap=plt.get_cmap('gray'))
 
 
-
-# Train Model
-#history = model.fit(X_train, Y_train, 
-#history = model.fit(
-#                    validation_data = (x_val, y_val), 
-#                    epochs=10, 
-#                    batch_size=256)
-
-#score = model.evaluate(x_test, y_test, batch_size = batch_size)
+#plt.subplot(222)
+#plt.imshow(data[1], cmap=plt.get_cmap('gray'))
+#plt.subplot(223)
+#plt.imshow(data[2], cmap=plt.get_cmap('gray'))
+plt.show()
 
 
 
-# Report Results
 
-#print(history.history)
-#model.predict()
+
+
+
 
 
