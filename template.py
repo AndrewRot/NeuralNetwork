@@ -5,10 +5,10 @@ from keras.models import Sequential
 from keras.layers import Dense, Activation, Dropout
 import numpy as np
 
-
 #from internet example
 from keras.datasets import mnist
 from keras.utils import np_utils
+from keras.models import load_model
 
 #other math libraries
 import math
@@ -24,11 +24,8 @@ num_classes = 10
 seed = 7
 np.random.seed(seed)
 
-
 #test some shit
 data = np.load('images.npy')
-
-
 
 #list of 2d arrays
 # 60% Training set
@@ -41,13 +38,10 @@ print('X_train original shape:', data.shape)
 num_pixels = 784 #data.shape[0] * data.shape[0]
 data = data.reshape(data.shape[0], num_pixels).astype('float32')
 data = data / 255
-
-#print(data)
 print('Reshaped X_train shape:', data.shape)
 
 
-
-#portion off the training data *** this method works. but not an even distrubtion of data passed through the model
+#portion off the training data *** this method works. make sure that the shape of these arrays match that of data
 X_train_set = np.array([]).reshape(0, 784)
 X_valid_set = np.array([]).reshape(0, 784)
 X_test_set = np.array([]).reshape(0, 784)
@@ -63,8 +57,7 @@ Y_train = labels
 print('Y_train original shape:', Y_train.shape)
 
 #portion off the training data
-
-#initialize Y values to the same length, these values are precalulcated from the data
+#initialize Y values to empty 1d arrays, since they only need to hold the corresponding labels
 Y_train_set = np.empty(0)
 Y_valid_set = np.empty(0)
 Y_test_set = np.empty(0)
@@ -73,10 +66,6 @@ print (Y_train_set.shape)
 print (Y_valid_set.shape)
 print (Y_test_set.shape)
 
-
-
-#****************************************************************************************************************
-#FIX THE SHIT IN HERE
 
 #more sofisticated data splitting
 #use a dictionary (like hashmap) to get a count of each label, split up the data by percent
@@ -89,7 +78,6 @@ for i in labels:
 
 #for i in letterCounts:
  #   print (i, letterCounts[i])
-
 #Counts for each letter
 # 0 651
 # 1 728
@@ -162,6 +150,7 @@ print("X_valid_set: ", len(X_valid_set),  " in shape ", X_valid_set.shape, " Y_v
 print("X_test_set: ", len(X_test_set), " in shape ", X_test_set.shape, " Y_test_set: ", Y_test_set.shape)
 
 
+#Print out the number of digits that should be placed in each bin for data partitioning
 #for i in training_set_count:
 #	print("Training set: number,", i, "has ", training_set_count[i], "pieces of data")
 #for i in validation_set_count:
@@ -170,26 +159,13 @@ print("X_test_set: ", len(X_test_set), " in shape ", X_test_set.shape, " Y_test_
 #	print("Test set: number,", i, "has ", test_set_count[i], "pieces of data")
 
 
-#****************************************************************************************************************
-
-#indices = [(0, 3899), (3900, 4874), (4875, 6500)]
-
-
-# one hot encode outputs
-
 #store an extra copy of the OG labels to check at the end for poor predictions
 Y_test_labels = Y_test_set
 
-
+# one hot encode outputs
 Y_train_set = np_utils.to_categorical(Y_train_set)
 Y_valid_set = np_utils.to_categorical(Y_valid_set)
 Y_test_set = np_utils.to_categorical(Y_test_set)
-
-
-
-
-
-
 
 
 # define baseline model
@@ -209,14 +185,16 @@ def baseline_model():
 	model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 	return model
 
-
-
 # build the model
 model = baseline_model()
+model.save('proj3.h5')
+
+#Check to see if model can be loaded
+#del model
+#model = load_model('proj3.h5')
+
 # Fit the model, use the training set and periodically check against the validation set. Repeat the training on the training set # of epoch times.
 # Find out which epoch opitimzed the validation set.
-
-
 history = model.fit(X_train_set, Y_train_set, validation_data=(X_valid_set, Y_valid_set), epochs=20, batch_size=batch_size, verbose=2)
 
 #model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=10, batch_size=batch_size, verbose=2)
@@ -225,13 +203,8 @@ scores = model.evaluate(X_test_set, Y_test_set, verbose=0)
 print("Baseline Error: %.2f%%" % (100-scores[1]*100))
 
 print (history.history)
-#need to predict
-#results = model.predict(X_train_set, verbose = 3)
-#print(results)
-#results2 = model.predict(X_valid_set, verbose = 4)
-#print(results2)
-#results3 = model.predict(X_test_set, verbose = 5)
-#print(results3)
+
+
 
 y_pred = model.predict_classes(X_test_set)
 
@@ -240,29 +213,24 @@ target_names = ['0','1','2','3','4','5','6','7','8','9']
 print(classification_report(np.argmax(Y_test_set, axis=1), y_pred, target_names = target_names))
 print(confusion_matrix(np.argmax(Y_test_set, axis = 1), y_pred))
 
+print("Find the wrongly predicted labels")
 missed_predictions = []
 cnt = 0;
 for i in y_pred:
-	print("cnt", cnt, "prediction", i, "actual", Y_test_labels[cnt])
+	#print("cnt", cnt, "prediction", i, "actual", Y_test_labels[cnt])
 	if(i != Y_test_labels[cnt]):
-		print("Missed prediction at index", cnt, "of X_test_set")
+		print("Missed prediction at index", cnt, "of X_test_set. Model prediction", i, ".. actual", Y_test_labels[cnt])
 		missed_predictions.append(cnt)
 	cnt += 1;
 	
-
 #reshape the data to 28 x 28
-
 X_test_set = X_test_set.reshape(X_test_set.shape[0], 28, 28).astype('float32')
 for i in range(3):
 	plt.subplot(221+i)
 	plt.imshow(X_test_set[missed_predictions[i]], cmap=plt.get_cmap('gray'))
 
-
-#plt.subplot(222)
-#plt.imshow(data[1], cmap=plt.get_cmap('gray'))
-#plt.subplot(223)
-#plt.imshow(data[2], cmap=plt.get_cmap('gray'))
 plt.show()
+
 
 
 
